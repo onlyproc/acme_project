@@ -1,7 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 
-from .models import  Birthday
+from .models import  Birthday, Congratulation
 
 
 BEATLES = {'Джон Леннон', 'Пол Маккартни', 'Ринго Старр', 'Джордж Харрисон'}
@@ -11,7 +12,7 @@ class BirthdayForm(forms.ModelForm):
 
     class Meta:
         model = Birthday
-        fields = '__all__'
+        exclude = ('author',)
         widgets = {'birthday': forms.DateInput(attrs={'type': 'date'})}
 
     def clean_first_name(self):
@@ -23,6 +24,21 @@ class BirthdayForm(forms.ModelForm):
         first_name = self.cleaned_data['first_name']
         last_name = self.cleaned_data['last_name']
         if f'{first_name} {last_name}' in BEATLES:
+            send_mail(
+                subject='Уведомление',
+                message=(f'Пользователь утверждает что он - {first_name} '
+                         f'{last_name}'),
+                from_email='birthday_form@acme.not',
+                recipient_list=['admin@acme.not'],
+                fail_silently=True,
+            )
             raise ValidationError(
                 'Мы тоже любим Битлз, но введите, пожалуйста, настоящее имя!'
             )
+
+
+class CongratulationForm(forms.ModelForm):
+
+    class Meta:
+        model = Congratulation
+        fields = ('text',)
